@@ -34,9 +34,17 @@ module Jekyll
   # We generate valid HTML5
   #
   class FootnoteTag < Liquid::Tag
-    def initialize(tag_name, id, tokens)
-      raise(SyntaxError.new("invalid footnote ID")) if ['"', '<', '>'].any? { |c| id.include?(c) }
-      @id = id.strip unless id.strip.empty?
+    def initialize(tag_name, params, tokens)
+      @params = Hash.try_convert(params)
+      if !@params.nil?
+        id = params["id"]
+        if !id.nil?
+          raise(SyntaxError.new("invalid footnote ID")) if ['"', '<', '>'].any? { |c| id.include?(c) }
+          @id = id.strip unless id.strip.empty?
+        end
+        
+        @aria_hidden = params["aria_hidden"] unless aria_hidden.nil?
+      end
       super
     end
 
@@ -46,7 +54,17 @@ module Jekyll
         context.registers[:fn] = context.registers[:fn].next
         @id = context.registers[:fn]
       end
-      "<sup><a href=\"#fn:#{@id}\" class=\"footnote\" rel=\"footnote\">#{@id}</a></sup>"      
+      
+      aria_hidden_tag = nil
+      if !@aria_hidden.nil?
+        if (@aria_hidden == true)
+          aria_hidden_tag = "aria-hidden=\"true\""
+        else
+          aria_hidden_tag = "aria-hidden=\"false\""
+        end
+  #      aria_hidden_tag = "aria-hidden=\"true\""
+      end
+      "<sup><a href=\"#fn:#{@id}\" #{aria_hidden_tag} class=\"footnote\" rel=\"footnote\">#{@id}</a></sup>"      
     end
   end
   
